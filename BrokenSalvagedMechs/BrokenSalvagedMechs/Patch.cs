@@ -20,9 +20,10 @@ namespace AdjustedMechAssembly {
 
                 Dictionary<MechDef, int> possibleMechs = new Dictionary<MechDef, int>();
                 int itemCount = 0;
-                if (settings.AssembleVariants) {
+
+                if (settings.AssembleVariants && !settings.VariantExceptions.Contains(id)) {
                     foreach (KeyValuePair<string, MechDef> pair in __instance.DataManager.MechDefs) {
-                        if (pair.Value.Chassis.PrefabBase.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.PrefabBase)) {           
+                        if (pair.Value.Chassis.PrefabBase.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.PrefabBase) && !settings.VariantExceptions.Contains(pair.Value.Description.Id)) {
                             int numberOfParts = __instance.GetItemCount(pair.Value.Description.Id, "MECHPART", SimGameState.ItemCountType.UNDAMAGED_ONLY);
                             if(numberOfParts > 0) {
                                 itemCount += numberOfParts;
@@ -37,20 +38,26 @@ namespace AdjustedMechAssembly {
                 int defaultMechPartMax = __instance.Constants.Story.DefaultMechPartMax;
                 if (itemCount + 1 >= defaultMechPartMax) {
                     MechDef mechDef = null;
-                    if (settings.AssembleVariants) {
-                        Random rand = new Random();
-                        bool found = false;
-                        foreach(KeyValuePair<MechDef, int> mech in possibleMechs) {
-                            if(rand.NextDouble() <= mech.Value) {
-                                mechDef = mech.Key;
-                                found = true;
-                                break;
-                            }
-                        }
-                        List<KeyValuePair<MechDef, int>> mechlist = possibleMechs.ToList();
-                        mechlist = possibleMechs.OrderByDescending(o => o.Value).ToList();
-                        if (!found) {                         
+                    List<KeyValuePair<MechDef, int>> mechlist = possibleMechs.ToList();
+                    mechlist = possibleMechs.OrderByDescending(o => o.Value).ToList();
+                    if (settings.AssembleVariants && !settings.VariantExceptions.Contains(id)) {
+                        if (settings.AssembleMostParts) {
                             mechDef = mechlist[0].Key;
+                        }
+                        else {
+                            Random rand = new Random();
+                            bool found = false;
+                            foreach (KeyValuePair<MechDef, int> mech in mechlist) {
+                                if (rand.NextDouble() <= mech.Value) {
+                                    mechDef = mech.Key;
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!found) {
+                                mechDef = mechlist[0].Key;
+                            }
                         }
                         int j = 0;
                         int i = 0;

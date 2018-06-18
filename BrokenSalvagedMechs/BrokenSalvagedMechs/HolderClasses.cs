@@ -1,4 +1,6 @@
-﻿namespace AdjustedMechAssembly {
+﻿using System.Collections.Generic;
+
+namespace AdjustedMechAssembly {
     public class Settings {
         public bool HeadRepaired = false;
         public bool LeftArmRepaired = false;
@@ -18,5 +20,7 @@
         public float RepairComponentsNonFunctionalThreshold = 0.5f;
 
         public bool AssembleVariants = true;
+        public bool AssembleMostParts = false;
+        public List<string> VariantExceptions;
     }
 }
