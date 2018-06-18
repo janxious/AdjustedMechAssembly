@@ -51,7 +51,7 @@ namespace AdjustedMechAssembly {
                             double roll = rand.NextDouble();
                             double currentTotal = 0;
                             foreach (KeyValuePair<MechDef, int> mech in mechlist) {
-                                currentTotal += mech.Value / defaultMechPartMax;
+                                currentTotal += (double)mech.Value / (double)defaultMechPartMax;
                                 if (roll <= currentTotal) {
                                     mechDef = mech.Key;
                                     break;
