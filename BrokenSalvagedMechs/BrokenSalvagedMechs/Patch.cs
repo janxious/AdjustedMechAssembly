@@ -16,16 +16,17 @@ namespace AdjustedMechAssembly {
 
         static void Postfix(SimGameState __instance, string id) {
             try {
-                Settings settings = Helper.LoadSettings();
 
+                __instance.AddItemStat(id, "MECHPART", false);
+
+                Settings settings = Helper.LoadSettings();
                 Dictionary<MechDef, int> possibleMechs = new Dictionary<MechDef, int>();
                 int itemCount = 0;
-
                 if (settings.AssembleVariants && !settings.VariantExceptions.Contains(id)) {
                     foreach (KeyValuePair<string, MechDef> pair in __instance.DataManager.MechDefs) {
                         if (pair.Value.Chassis.PrefabBase.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.PrefabBase) && !settings.VariantExceptions.Contains(pair.Value.Description.Id)) {
                             int numberOfParts = __instance.GetItemCount(pair.Value.Description.Id, "MECHPART", SimGameState.ItemCountType.UNDAMAGED_ONLY);
-                            if(numberOfParts > 0) {
+                            if (numberOfParts > 0) {
                                 itemCount += numberOfParts;
                                 possibleMechs.Add(new MechDef(pair.Value, __instance.GenerateSimGameUID()), numberOfParts);
                             }
@@ -36,7 +37,7 @@ namespace AdjustedMechAssembly {
                     itemCount = __instance.GetItemCount(id, "MECHPART", SimGameState.ItemCountType.UNDAMAGED_ONLY);
                 }
                 int defaultMechPartMax = __instance.Constants.Story.DefaultMechPartMax;
-                if (itemCount + 1 >= defaultMechPartMax) {
+                if (itemCount >= defaultMechPartMax) {
                     MechDef mechDef = null;
                     List<KeyValuePair<MechDef, int>> mechlist = possibleMechs.ToList();
                     mechlist = possibleMechs.OrderByDescending(o => o.Value).ToList();
@@ -46,24 +47,22 @@ namespace AdjustedMechAssembly {
                         }
                         else {
                             Random rand = new Random();
-                            bool found = false;
+                            int numberOfDifferentVariants = mechlist.Count;
+                            double roll = rand.NextDouble();
+                            double currentTotal = 0;
                             foreach (KeyValuePair<MechDef, int> mech in mechlist) {
-                                if (rand.NextDouble() <= mech.Value) {
+                                currentTotal += mech.Value / defaultMechPartMax;
+                                if (roll <= currentTotal) {
                                     mechDef = mech.Key;
-                                    found = true;
                                     break;
                                 }
-                            }
-
-                            if (!found) {
-                                mechDef = mechlist[0].Key;
                             }
                         }
                         int j = 0;
                         int i = 0;
                         int currentPart = 1;
-                        while (i < defaultMechPartMax -1) {
-                            if(currentPart > mechlist[j].Value) {
+                        while (i < defaultMechPartMax) {
+                            if (currentPart > mechlist[j].Value) {
                                 j++;
                                 currentPart = 1;
                             }
@@ -73,7 +72,7 @@ namespace AdjustedMechAssembly {
                         }
                     }
                     else {
-                        for (int i = 0; i < defaultMechPartMax - 1; i++) {
+                        for (int i = 0; i < defaultMechPartMax; i++) {
                             ReflectionHelper.InvokePrivateMethode(__instance, "RemoveItemStat", new object[] { id, "MECHPART", false });
                         }
                         mechDef = new MechDef(__instance.DataManager.MechDefs.Get(id), __instance.GenerateSimGameUID());
@@ -150,9 +149,6 @@ namespace AdjustedMechAssembly {
                     SimGameInterruptManager interrupt = (SimGameInterruptManager)ReflectionHelper.GetPrivateField(__instance, "interruptQueue");
                     interrupt.DisplayIfAvailable();
                     __instance.MessageCenter.PublishMessage(new SimGameMechAddedMessage(mechDef, true));
-                }
-                else {
-                    __instance.AddItemStat(id, "MECHPART", false);
                 }
             }
             catch (Exception e) {
