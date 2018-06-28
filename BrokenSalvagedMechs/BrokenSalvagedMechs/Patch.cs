@@ -24,7 +24,7 @@ namespace AdjustedMechAssembly {
                 int itemCount = 0;
                 if (settings.AssembleVariants && !settings.VariantExceptions.Contains(id)) {
                     foreach (KeyValuePair<string, MechDef> pair in __instance.DataManager.MechDefs) {
-                        if (pair.Value.Chassis.PrefabBase.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.PrefabBase) && !settings.VariantExceptions.Contains(pair.Value.Description.Id)) {
+                        if (pair.Value.Chassis.PrefabBase.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.PrefabBase) && !settings.VariantExceptions.Contains(pair.Value.Description.Id) && pair.Value.Chassis.Tonnage.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.Tonnage)) {
                             int numberOfParts = __instance.GetItemCount(pair.Value.Description.Id, "MECHPART", SimGameState.ItemCountType.UNDAMAGED_ONLY);
                             if (numberOfParts > 0) {
                                 itemCount += numberOfParts;
