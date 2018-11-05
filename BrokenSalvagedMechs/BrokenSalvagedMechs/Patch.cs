@@ -22,13 +22,23 @@ namespace AdjustedMechAssembly {
                 Settings settings = Helper.LoadSettings();
                 Dictionary<MechDef, int> possibleMechs = new Dictionary<MechDef, int>();
                 int itemCount = 0;
-                if (settings.AssembleVariants && !settings.VariantExceptions.Contains(id)) {
-                    foreach (KeyValuePair<string, MechDef> pair in __instance.DataManager.MechDefs) {
-                        if (pair.Value.Chassis.PrefabIdentifier.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.PrefabIdentifier) && !settings.VariantExceptions.Contains(pair.Value.Description.Id) && pair.Value.Chassis.Tonnage.Equals(__instance.DataManager.MechDefs.Get(id).Chassis.Tonnage)) {
-                            int numberOfParts = __instance.GetItemCount(pair.Value.Description.Id, "MECHPART", SimGameState.ItemCountType.UNDAMAGED_ONLY);
+                MechDef refMechDef = __instance.DataManager.MechDefs.Get(id);
+                bool isVariantException =
+                    refMechDef.Chassis.ChassisTags.Contains("ama-variant-exception")
+                    || settings.VariantExceptions.Contains(id);
+                if (settings.AssembleVariants && !isVariantException)
+                {
+                    foreach (KeyValuePair<string, MechDef> pair in __instance.DataManager.MechDefs)
+                    {
+                        MechDef mechDef = pair.Value;
+                        if (!isVariantException
+                            && mechDef.Chassis.PrefabIdentifier.Equals(refMechDef.Chassis.PrefabIdentifier)
+                            && mechDef.Chassis.Tonnage.Equals(refMechDef.Chassis.Tonnage))
+                        {
+                            int numberOfParts = __instance.GetItemCount(mechDef.Description.Id, "MECHPART", SimGameState.ItemCountType.UNDAMAGED_ONLY);
                             if (numberOfParts > 0) {
                                 itemCount += numberOfParts;
-                                possibleMechs.Add(new MechDef(pair.Value, __instance.GenerateSimGameUID()), numberOfParts);
+                                possibleMechs.Add(new MechDef(mechDef, __instance.GenerateSimGameUID()), numberOfParts);
                             }
                         }
                     }
@@ -41,7 +51,8 @@ namespace AdjustedMechAssembly {
                     MechDef mechDef = null;
                     List<KeyValuePair<MechDef, int>> mechlist = possibleMechs.ToList();
                     mechlist = possibleMechs.OrderByDescending(o => o.Value).ToList();
-                    if (settings.AssembleVariants && !settings.VariantExceptions.Contains(id)) {
+                    if (settings.AssembleVariants && !isVariantException)
+                    {
                         if (settings.AssembleMostParts) {
                             mechDef = mechlist[0].Key;
                         }
@@ -75,7 +86,7 @@ namespace AdjustedMechAssembly {
                         for (int i = 0; i < defaultMechPartMax; i++) {
                             ReflectionHelper.InvokePrivateMethode(__instance, "RemoveItemStat", new object[] { id, "MECHPART", false });
                         }
-                        mechDef = new MechDef(__instance.DataManager.MechDefs.Get(id), __instance.GenerateSimGameUID());
+                        mechDef = new MechDef(refMechDef, __instance.GenerateSimGameUID());
                     }
                     Random rng = new Random();
                     if (!settings.HeadRepaired && (!settings.RepairMechLimbs || rng.NextDouble() > settings.RepairMechLimbsChance)) {
